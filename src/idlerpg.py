@@ -47,11 +47,13 @@ class Player():
 
         # TODO improve error checking while parsing
 
-        self.username = doc.find('username').text
+        self.username = doc.findtext('username')
         self.logger.debug(u'loading player info: %s', self.username)
+        if (self.username == None): return False
 
-        self.online = int(doc.find('online').text)
+        self.online = int(doc.findtext('online'))
         self.logger.debug(u'[%s] online: %s', self.username, self.online)
+        if (self.online == None): return False
 
         return True
 

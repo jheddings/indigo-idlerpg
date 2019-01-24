@@ -22,7 +22,8 @@ class IdleRPGPlayerTest(unittest.TestCase):
     def test_LoadBadFormatXML(self):
         player = idlerpg.Player()
 
-        self.assertFalse(player.load_from_file("test/bad_xml_player.xml"))
+        self.assertFalse(player.load_from_file("test/bad_format.xml"))
+        self.assertFalse(player.load_from_file("test/bad_schema.xml"))
 
     #---------------------------------------------------------------------------
     def test_CheckOnlineOffline(self):
