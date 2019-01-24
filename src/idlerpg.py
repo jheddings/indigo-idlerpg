@@ -52,8 +52,12 @@ class Player():
         if (self.username == None): return False
 
         self.online = int(doc.findtext('online'))
-        self.logger.debug(u'[%s] online: %s', self.username, self.online)
+        self.logger.debug(u'[%s] online: %d', self.username, self.online)
         if (self.online == None): return False
+
+        self.level = int(doc.findtext('level'))
+        self.logger.debug(u'[%s] level: %d', self.username, self.level)
+        if (self.level == None): return False
 
         return True
 

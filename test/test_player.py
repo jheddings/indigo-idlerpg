@@ -35,3 +35,10 @@ class IdleRPGPlayerTest(unittest.TestCase):
         player.load_from_file("test/jarvis_offline.xml")
         self.assertFalse(player.isOnline())
 
+    #---------------------------------------------------------------------------
+    def test_CheckPlayerLevel(self):
+        player = idlerpg.Player()
+
+        player.load_from_file("test/jarvis_online.xml")
+        self.assertEqual(player.level, 31)
+
