@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<player>
+    <username>jarvis</username>
+    <isadmin>0</isadmin>
+    <level>31</level>
+    <class>Humble Servant</class>
+    <ttl>45375</ttl>
+    <userhost>jarvis!~jarvis@my.ip.net</userhost>
+    <online>0</online>
+    <totalidled>419468</totalidled>
+    <xpos>275</xpos>
+    <ypos>19</ypos>
+    <alignment>g</alignment>
+    <penalties>
+        <logout>0</logout>
+        <quest>764</quest>
+        <quit>0</quit>
+        <kick>0</kick>
+        <part>0</part>
+        <nick>0</nick>
+        <mesg>0</mesg>
+        <total>764</total>
+    </penalties>
+    <items>
+        <weapon>23</weapon>
+        <tunic>27</tunic>
+        <shield>25</shield>
+        <leggings>23</leggings>
+        <ring>29</ring>
+        <gloves>23</gloves>
+        <boots>0</boots>
+        <helm>51a</helm>
+        <charm>24</charm>
+        <amulet>35</amulet>
+        <total>260</total>
+    </items>
+</player>
