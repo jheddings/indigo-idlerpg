@@ -45,21 +45,32 @@ class Player():
     def load_from_document(self, doc):
         self.logger.debug(u'loading player info from XML document: %s', doc.tag)
 
-        # TODO improve error checking while parsing
-
-        self.username = doc.findtext('username')
-        self.logger.debug(u'loading player info: %s', self.username)
+        self.username = self._find_field_str(doc, 'username')
         if (self.username == None): return False
 
-        self.online = int(doc.findtext('online'))
-        self.logger.debug(u'[%s] online: %d', self.username, self.online)
+        self.online = self._find_field_int(doc, 'online')
         if (self.online == None): return False
 
-        self.level = int(doc.findtext('level'))
-        self.logger.debug(u'[%s] level: %d', self.username, self.level)
+        self.level = self._find_field_int(doc, 'level')
         if (self.level == None): return False
 
         return True
+
+    #---------------------------------------------------------------------------
+    def _find_field_str(self, doc, field):
+        text = doc.findtext(field)
+        self.logger.debug(u'%s[%s] = %s', doc.tag, field, text)
+
+        return text
+
+    #---------------------------------------------------------------------------
+    def _find_field_int(self, doc, field):
+        text = self._find_field_str(doc, field)
+
+        if (text is None): return None
+        if (not text.isdigit()): return None
+
+        return int(text)
 
     #---------------------------------------------------------------------------
     def isOnline(self): return (self.online == 1)
