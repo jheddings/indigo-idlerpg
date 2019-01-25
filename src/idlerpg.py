@@ -1,4 +1,5 @@
 ## wrapper for reading idlerpg data
+# http://idlerpg.net/source.php
 
 import logging
 import urllib2
@@ -16,6 +17,7 @@ class Player():
 
         self.username = None
         self.online = None
+        self.level = None
 
     #---------------------------------------------------------------------------
     def load_from_url(self, url):
