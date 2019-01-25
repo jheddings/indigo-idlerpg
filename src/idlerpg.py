@@ -21,18 +21,30 @@ class Player():
 
     #---------------------------------------------------------------------------
     def load_from_url(self, url):
+        if (url is None):
+            self.logger.warn(u'url is empty')
+            return None
+
         self.logger.debug(u'loading player info from url: %s', url)
         player_data = self._get_url(url)
         return self.load_from_string(player_data)
 
     #---------------------------------------------------------------------------
     def load_from_file(self, path):
+        if (path is None):
+            self.logger.warn(u'path is empty')
+            return None
+
         self.logger.debug(u'loading player info from file: %s', path)
         player_data = self._read_file(path)
         return self.load_from_string(player_data)
 
     #---------------------------------------------------------------------------
     def load_from_string(self, xml):
+        if (xml is None):
+            self.logger.warn(u'data is empty')
+            return None
+
         self.logger.debug(u'loading player info from data: %d bytes', len(xml))
 
         try:
@@ -45,6 +57,10 @@ class Player():
 
     #---------------------------------------------------------------------------
     def load_from_document(self, doc):
+        if (doc is None):
+            self.logger.warn(u'document is empty')
+            return None
+
         self.logger.debug(u'loading player info from XML document: %s', doc.tag)
 
         self.username = self._find_field_str(doc, 'username')
@@ -79,15 +95,21 @@ class Player():
 
     #---------------------------------------------------------------------------
     def _read_file(self, path):
+        if (path is None): return None
+
         data = None
 
-        with open(path) as fh:
-            data = fh.read()
+        try:
+            with open(path) as fh:
+                data = fh.read()
+        except IOError as err:
+            self.logger.error(u'%s', err)
 
         return data
 
     #---------------------------------------------------------------------------
     def _get_url(self, url):
+        if (url is None): return None
         self.logger.debug(u'downloading data: %s', url)
 
         data = None
@@ -100,7 +122,10 @@ class Player():
             self.logger.debug(u'downloaded %d bytes', len(data))
 
         except urllib2.HTTPError as err:
-            self.logger.warn(u'HTTP Error: %s', err.reason)
+            self.logger.warn(u'HTTP Error (%d): %s', err.code, err.reason)
+
+        except urllib2.URLError as err:
+            self.logger.warn(u'URL Error: %s', err.reason)
 
         return data
 

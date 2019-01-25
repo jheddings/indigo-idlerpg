@@ -48,7 +48,7 @@ class Plugin(iplug.ThreadedPlugin):
 
         typeId = device.deviceTypeId
 
-        if typeId == 'player':
+        if typeId == 'info':
             self._updatePlayerInfo(device)
 
     #---------------------------------------------------------------------------

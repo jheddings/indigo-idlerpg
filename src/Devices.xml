@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Devices>
 
-  <Device type="custom" id="player">
+  <Device type="custom" id="info">
 
     <Name>Player Info</Name>
 
