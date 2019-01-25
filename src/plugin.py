@@ -22,20 +22,9 @@ class Plugin(iplug.ThreadedPlugin):
     def validateDeviceConfigUi(self, values, typeId, devId):
         errors = indigo.Dict()
 
+        # TODO
+
         return ((len(errors) == 0), values, errors)
-
-    #---------------------------------------------------------------------------
-    def deviceStartComm(self, device):
-        iplug.ThreadedPlugin.deviceStartComm(self, device)
-        # update device status
-
-    #---------------------------------------------------------------------------
-    def deviceStopComm(self, device):
-        iplug.ThreadedPlugin.deviceStopComm(self, device)
-
-    #---------------------------------------------------------------------------
-    def loadPluginPrefs(self, prefs):
-        iplug.ThreadedPlugin.loadPluginPrefs(self, prefs)
 
     #---------------------------------------------------------------------------
     def runLoopStep(self):
