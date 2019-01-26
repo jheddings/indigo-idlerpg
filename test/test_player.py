@@ -44,18 +44,31 @@ class IdleRPGPlayerTest(unittest.TestCase):
     def test_LoadBadData(self):
         player = idlerpg.Player()
 
-        player.load_from_string(None)
-        self.assertFalse(player.isOnline())
+        self.assertFalse(player.load_from_string(None))
+        self.assertFalse(player.load_from_string(''))
 
     #---------------------------------------------------------------------------
     def test_BasicPlayerInfo(self):
         player = idlerpg.Player()
 
-        player.load_from_file('test/jarvis_31_online.xml')
+        self.assertTrue(player.load_from_file('test/jarvis_31_online.xml'))
         self.assertTrue(player.isOnline())
         self.assertEqual(player.level, 31)
+        self.assertGreater(player.ttl, 0)
 
-        player.load_from_file('test/jarvis_31_offline.xml')
+    #---------------------------------------------------------------------------
+    def test_OfflinePlayerInfo(self):
+        player = idlerpg.Player()
+
+        self.assertTrue(player.load_from_file('test/jarvis_31_offline.xml'))
         self.assertFalse(player.isOnline())
         self.assertEqual(player.level, 31)
+        self.assertGreater(player.ttl, 0)
+
+    #---------------------------------------------------------------------------
+    def test_PlayerPosition(self):
+        player = idlerpg.Player()
+
+        self.assertTrue(player.load_from_file('test/jarvis_31_online.xml'))
+        self.assertEqual(player.pos, (275, 19))
 
