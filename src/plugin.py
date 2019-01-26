@@ -53,19 +53,21 @@ class Plugin(iplug.ThreadedPlugin):
 
     #---------------------------------------------------------------------------
     def _updatePlayerInfo(self, device):
-        url = device.pluginProps['url']
-        self.logger.debug(u'Updating from URL: %s', url)
+        address = device.pluginProps['address']
+        self.logger.debug(u'Updating from URL: %s', address)
 
         player = idlerpg.Player()
 
-        if (player.load_from_url(url)):
+        if (player.load_from_url(address)):
             device.updateStateOnServer('online', player.isOnline())
             device.updateStateOnServer('level', player.level)
             device.updateStateOnServer('username', player.username)
             device.updateStateOnServer('lastUpdatedAt', time.strftime('%c'))
 
             if (player.isOnline()):
-                device.updateStateOnServer('status', 'Active')
+                device.updateStateOnServer('status', 'Online')
+                device.updateStateImageOnServer(indigo.kStateImageSel.SensorOn)
             else:
-                device.updateStateOnServer('status', 'Inactive')
+                device.updateStateOnServer('status', 'Offline')
+                device.updateStateImageOnServer(indigo.kStateImageSel.SensorOff)
 

@@ -6,10 +6,10 @@
     <Name>Player Info</Name>
 
     <ConfigUI>
-      <Field id="url" type="textfield" defaultValue="">
+      <Field id="address" type="textfield" defaultValue="">
         <Label>URL:</Label>
       </Field>
-      <Field id="urlHelp" type="label" fontSize="mini" alignWithControl="true">
+      <Field id="addressHelp" type="label" fontSize="mini" alignWithControl="true">
         <Label>The player info URL (in XML format) from your IdleRPG server.</Label>
       </Field>
     </ConfigUI>
