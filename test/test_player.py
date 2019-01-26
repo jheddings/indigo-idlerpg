@@ -6,7 +6,7 @@ import unittest
 import idlerpg
 
 # keep logging output to a minumim for testing
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.FATAL)
 
 ################################################################################
 class IdleRPGPlayerTest(unittest.TestCase):
