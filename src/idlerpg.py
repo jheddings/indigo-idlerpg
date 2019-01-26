@@ -47,6 +47,8 @@ class Player():
 
         self.logger.debug(u'loading player info from data: %d bytes', len(xml))
 
+        # TODO consider using xmljson to parse xml into python dict
+
         try:
             root = ElementTree.fromstring(xml)
             return self.load_from_document(root)
@@ -71,6 +73,15 @@ class Player():
 
         self.level = self._find_field_int(doc, 'level')
         if (self.level == None): return False
+
+        self.ttl = self._find_field_int(doc, 'ttl')
+        if (self.ttl == None): return False
+
+        self.xpos = self._find_field_int(doc, 'xpos')
+        if (self.xpos == None): return False
+
+        self.ypos = self._find_field_int(doc, 'ypos')
+        if (self.ypos == None): return False
 
         return True
 
