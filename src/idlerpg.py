@@ -66,23 +66,23 @@ class Player():
         self.logger.debug(u'loading player info from XML document: %s', doc.tag)
 
         # parse basic info
-        self.username = self._parse_field(doc, 'username')
+        self.username = self._parse_text(doc, 'username')
         if (self.username == None): return False
 
-        self.online = self._parse_field(doc, 'online')
+        self.online = self._parse_text(doc, 'online')
         if (self.online == None): return False
 
-        self.level = self._parse_field(doc, 'level')
+        self.level = self._parse_text(doc, 'level')
         if (self.level == None): return False
 
-        self.ttl = self._parse_field(doc, 'ttl')
+        self.ttl = self._parse_text(doc, 'ttl')
         if (self.ttl == None): return False
 
         # load positon as a tuple
-        xpos = self._parse_field(doc, 'xpos')
+        xpos = self._parse_text(doc, 'xpos')
         if (xpos == None): return False
 
-        ypos = self._parse_field(doc, 'ypos')
+        ypos = self._parse_text(doc, 'ypos')
         if (ypos == None): return False
 
         self.pos = (xpos, ypos)
@@ -97,32 +97,28 @@ class Player():
         return True
 
     #---------------------------------------------------------------------------
-    def _parse_field(self, doc, field):
-        text = doc.findtext(field)
-        self.logger.debug(u'%s[%s] = %s', doc.tag, field, text)
-
-        if (text is None):
+    def _parse_field(self, val):
+        if (val is None):
             return None
 
-        if (text.isdigit()):
-            return int(text)
+        if (val.isdigit()):
+            return int(val)
 
-        return text
+        return val
+
+    #---------------------------------------------------------------------------
+    def _parse_text(self, doc, field):
+        text = doc.findtext(field)
+        self.logger.debug(u'%s[%s] = %s', doc.tag, field, text)
+        return self._parse_field(text)
 
     #---------------------------------------------------------------------------
     def _parse_dict(self, doc, field):
-        nodes = doc.find(field)
-        if (nodes is None): return None
-
         obj = dict()
 
-        for node in nodes:
+        for node in doc.find(field):
             self.logger.debug(u'%s[%s/%s] = %s', doc.tag, field, node.tag, node.text)
-
-            if (node.text.isdigit()):
-                obj[node.tag] = int(node.text)
-            else:
-                obj[node.tag] = node.text
+            obj[node.tag] = self._parse_field(node.text)
 
         return obj
 
