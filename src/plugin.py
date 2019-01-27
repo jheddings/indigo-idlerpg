@@ -37,10 +37,8 @@ class Plugin(iplug.ThreadedPlugin):
     #---------------------------------------------------------------------------
     def refreshPlayerStatus(self):
         for device in indigo.devices.itervalues('self'):
-            if device.enabled:
+            if (device.enabled and device.configured):
                 self._update(device)
-            else:
-                self.logger.debug(u'Device disabled: %s', device.name)
 
     #---------------------------------------------------------------------------
     def _update(self, device):
@@ -54,8 +52,6 @@ class Plugin(iplug.ThreadedPlugin):
     #---------------------------------------------------------------------------
     def _updatePlayerInfo(self, device):
         address = device.pluginProps['address']
-        self.logger.debug(u'Updating from URL: %s', address)
-
         player = idlerpg.Player()
 
         if (player.load_from_url(address)):

@@ -97,7 +97,7 @@ class Player():
         return True
 
     #---------------------------------------------------------------------------
-    def _parse_field(self, val):
+    def _parse_value(self, val):
         if (val is None):
             return None
 
@@ -110,7 +110,7 @@ class Player():
     def _parse_text(self, doc, field):
         text = doc.findtext(field)
         self.logger.debug(u'%s[%s] = %s', doc.tag, field, text)
-        return self._parse_field(text)
+        return self._parse_value(text)
 
     #---------------------------------------------------------------------------
     def _parse_dict(self, doc, field):
@@ -118,7 +118,7 @@ class Player():
 
         for node in doc.find(field):
             self.logger.debug(u'%s[%s/%s] = %s', doc.tag, field, node.tag, node.text)
-            obj[node.tag] = self._parse_field(node.text)
+            obj[node.tag] = self._parse_value(node.text)
 
         return obj
 
