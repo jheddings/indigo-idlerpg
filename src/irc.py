@@ -10,6 +10,10 @@ import socket
 import logging
 
 # XXX should commands like JOIN and PART wait until the server acks before returning?
+# would need to worry about error codes, such as 451 if we decide to do this...
+
+# XXX we could provide a "daemon" in this package that helps to process the server
+# responses in the background on a separate thread...
 
 ################################################################################
 class Client:
@@ -23,15 +27,14 @@ class Client:
 
     #---------------------------------------------------------------------------
     def __init__(self, nick, name):
-        self.logger = logging.getLogger('Plugin.idlerpg.IRC')
+        self.logger = logging.getLogger('Plugin.idlerpg.IRC.Client')
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.nick = nick
         self.name = name
 
     #---------------------------------------------------------------------------
     # iterate over server responses - this iterator will block until data is read
-    def __iter__(self):
-        return self
+    def __iter__(self): return self
 
     #---------------------------------------------------------------------------
     # send one line of text
