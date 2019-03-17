@@ -1,10 +1,12 @@
 ## very basic IRC client
 
 # helpful resources:
-# https://github.com/jaraco/irc - full IRC client in Python
 # https://pythonspot.com/building-an-irc-bot/
 # https://stackoverflow.com/questions/2968408/how-do-i-program-a-simple-irc-bot-in-python
 # https://stackoverflow.com/a/822788/197772 - socket line buffering
+#
+# https://github.com/jaraco/irc - full IRC client in Python
+# consider using the client or simple bot implementation
 
 import socket
 import logging
@@ -77,16 +79,6 @@ class Client:
         return text
 
     #---------------------------------------------------------------------------
-    # processes the next server response and only returns the reply code
-    def _next_code(self):
-        line = self.next()
-
-        if (line is not None and line.startswith(':')):
-            return line.split(' ', 2)[1]
-
-        return None
-
-    #---------------------------------------------------------------------------
     def join(self, channel):
         self._send('JOIN %s' % channel)
 
@@ -124,41 +116,39 @@ class Client:
         while self.next(): pass
 
         self.sock.close()
+        self.logger.debug(u': connection closed')
 
     #---------------------------------------------------------------------------
     # this method blocks (handling PING) until it sees the welcome message
-    # NOTE if the connection is already registered, this will block forever!
-    def register(self, clearGreetings=True):
+    def waitForWelcome(self):
+        self.logger.debug(u': waiting for welcome message')
+        self.waitForReplyCode('001')
+
+    #---------------------------------------------------------------------------
+    # this method blocks (handling PING) until it sees the given reply code
+    def waitForReplyCode(self, code):
         reply = None
 
-        # TODO probably need some error checking here...
+        # TODO handle errors & closed connections
 
-        # read until RPL_WELCOME (001)
-        while (not reply == '001'):
-            self.logger.debug(u': waiting for welcome banner')
-            reply = self._next_code()
+        while (not reply == code):
+            line = self.next()
 
-        # XXX the only problem with clearing all greeting messages is that the
-        # client could end up blocking for a very long time if the server just
-        # happens to stop sending messages right after the last greeting...
-        # this approach assumes there will always be another reply after the last
-        # 0xx reply from the server
+            if (line is not None and line.startswith(':')):
+                reply = line.split(' ', 2)[1]
+            else:
+                reply = None
 
-        # read until end of greetings...
-        if (clearGreetings):
-            self.logger.debug(u': clearing all greetings >>>')
-            while (reply.startswith('0')):
-                reply = self._next_code()
-            self.logger.debug(u': greeting messages cleared <<<')
-
-        # what about MOTD (376) or no MOTD (422) ?
+        return None
 
     #---------------------------------------------------------------------------
     # this method is blocking and should usually be called on a separate thread
+    # when calling this method, PING will be automatically responded with PONG
     def next(self):
         reply = self._recv()
 
         # TODO are there other responses we should handle automatically?
+        # XXX what about events (JOIN, PART) that we might want to trigger?
 
         if (reply is not None and reply.startswith('PING')):
             msg = reply.split(':', 1)[1]
