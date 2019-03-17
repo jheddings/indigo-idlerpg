@@ -100,7 +100,7 @@ class Client:
             self._send('PASS %s' % passwd)
 
         self._send('NICK %s' % self.nick)
-        self._send('USER %s none none %s' % (self.nick, self.name))
+        self._send('USER %s - - %s' % (self.nick, self.name))
 
     #---------------------------------------------------------------------------
     def msg(self, recip, msg):
