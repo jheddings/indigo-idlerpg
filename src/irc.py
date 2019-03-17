@@ -124,19 +124,25 @@ class Client:
         self.logger.debug(u': connection closed')
 
     #---------------------------------------------------------------------------
-    # this method blocks (handling PING) until it sees the welcome message
-    def waitForWelcome(self):
+    # this method blocks (handling events) until it sees the welcome message
+    def wait_for_welcome(self):
         self.logger.debug(u': waiting for welcome message')
-        self.waitForReplyCode('001')
+        self.wait_for_reply_code('001')
 
     #---------------------------------------------------------------------------
-    # this method blocks (handling PING) until it sees the given reply code
-    def waitForReplyCode(self, code):
+    # this method blocks (handling events) until it sees the end of MOTD
+    def wait_for_motd(self):
+        self.logger.debug(u': waiting for MOTD')
+        self.wait_for_reply_code('376', '422')
+
+    #---------------------------------------------------------------------------
+    # this method blocks (handling events) until it sees one of the given reply codes
+    def wait_for_reply_code(self, *codes):
         reply = None
 
         # TODO handle errors & closed connections
 
-        while (not reply == code):
+        while (not reply in codes):
             line = self.next()
 
             if (line is not None and line.startswith(':')):
@@ -150,24 +156,52 @@ class Client:
     # this method is blocking and should usually be called on a separate thread
     # when calling this method, PING will be automatically responded with PONG
     def next(self):
-        reply = self._recv()
+        message = self._recv()
 
-        # TODO are there other responses we should handle automatically?
-        # e.g. ERROR
+        if (message is None):
+            return None
 
-        # TODO convert the if...else logic to event handlers: e.g. on_ping
-        # XXX what about events (JOIN, PART) that we might want to trigger?
+        if (message.startswith(':')):
+            self.on_message(message)
 
-        if (reply is not None and reply.startswith('PING')):
-            msg = reply.split(':', 1)[1]
-            self._send('PONG :%s' % msg)
+        elif (message.startswith('PING')):
+            txt = message.split(':', 1)[1]
+            self.on_ping(txt)
 
-        return reply
+        elif (message.startswith('ERROR')):
+            txt = message.split(':', 1)[1]
+            self.on_error(txt)
+
+        else:
+            self.logger.warn(u'Unknown message -- %s', message)
+
+        return message
 
     #---------------------------------------------------------------------------
     # this method is blocking and should usually be called on a separate thread
     # process server messages and generate events as needed until interrupted
     def communicate(self):
-        while self.next():
+
+        # XXX does it make more sense for this method to deal with all event
+        # handlers rather than next()?  just need to make sure that any methods
+        # calling next() are okay with that change (especially any methods
+        # expecting PING responses or other events to happen - e.g. wait_for_*)
+
+        while (self.next()):
             pass
+
+    #---------------------------------------------------------------------------
+    # handle server messages - responses that start with :
+    def on_message(self, msg):
+        pass
+
+    #---------------------------------------------------------------------------
+    # handle PING commands, txt - the challenge text from the PING
+    def on_ping(self, txt):
+        self._send('PONG :%s' % txt)
+
+    #---------------------------------------------------------------------------
+    # handle ERROR commands, msg - error message
+    def on_error(self, msg):
+        self.logger.warn(msg)
 
