@@ -37,7 +37,7 @@ class Client:
     # send one line of text
     def _send(self, msg):
         self.logger.debug(u'> %s', msg)
-        self.sock.send("%s\n" % msg)
+        self.sock.sendall("%s\n" % msg)
 
     #---------------------------------------------------------------------------
     # receive one line of text
@@ -51,6 +51,8 @@ class Client:
 
         # if there are no lines in the buffer, we need more data
         if (not "\n" in self.recvbuf):
+            self.logger.debug(u': no lines in buffer; reading data from socket')
+
             # receive a block of data at a time
             more = self.sock.recv(4096)
             if (more is not None and len(more) > 0):
@@ -58,6 +60,8 @@ class Client:
 
         # if there is a newline in the buffer, we can process the next line
         if ("\n" in self.recvbuf):
+            self.logger.debug(u': reading next line from buffer; recvbuf:%d', len(self.recvbuf))
+
             (text, newbuf) = self.recvbuf.split("\n", 1)
             text = text.strip()
             self.recvbuf = newbuf
@@ -113,27 +117,36 @@ class Client:
         else:
             self._send('QUIT :%s' % msg)
 
+        # read all remaining data from server
+        while self.next(): pass
+
+        self.sock.close()
+
     #---------------------------------------------------------------------------
     # this method blocks (handling PING) until it sees the welcome message
     # NOTE if the connection is already registered, this will block forever!
-    def register(self, clearWelcomeMessages=True):
+    def register(self, clearGreetings=True):
         reply = None
 
         # TODO probably need some error checking here...
 
         # read until RPL_WELCOME (001)
         while (not reply == '001'):
+            self.logger.debug(u': waiting for welcome banner')
             reply = self._next_code()
 
-        # XXX the only problem with clearing all banner messages is that the
+        # XXX the only problem with clearing all greeting messages is that the
         # client could end up blocking for a very long time if the server just
-        # happens to stop sending messages...  this approach assumes there will
-        # be another reply after the last 0xx reply from the server
+        # happens to stop sending messages right after the last greeting...
+        # this approach assumes there will always be another reply after the last
+        # 0xx reply from the server
 
-        # read until end of welcome messages...
-        if (clearWelcomeMessages):
+        # read until end of greetings...
+        if (clearGreetings):
+            self.logger.debug(u': clearing all greetings >>>')
             while (reply.startswith('0')):
                 reply = self._next_code()
+            self.logger.debug(u': greeting messages cleared <<<')
 
         # what about MOTD (376) or no MOTD (422) ?
 
