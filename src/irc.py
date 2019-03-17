@@ -13,7 +13,7 @@ import logging
 # would need to worry about error codes, such as 451 if we decide to do this...
 
 # XXX we could provide a "daemon" in this package that helps to process the server
-# responses in the background on a separate thread...
+# responses on a separate thread...  that might just overcomplicate things
 
 ################################################################################
 class Client:
