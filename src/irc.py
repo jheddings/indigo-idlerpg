@@ -1,4 +1,4 @@
-## very basic IRC client
+## a very basic socket-level IRC client
 
 # helpful resources:
 # https://pythonspot.com/building-an-irc-bot/
@@ -17,7 +17,12 @@ import logging
 # XXX we could provide a "daemon" in this package that helps to process the server
 # responses on a separate thread...  that might just overcomplicate things
 
+# XXX should probably protect the receive buffer with a lock in case the caller
+# is running multi-threaded (especially communicate() and quit())
+
 ################################################################################
+# the caller must be sure to start listening for server communication soon after
+# making the initial connection using either next() or communicate()
 class Client:
 
     sock = None
@@ -148,6 +153,9 @@ class Client:
         reply = self._recv()
 
         # TODO are there other responses we should handle automatically?
+        # e.g. ERROR
+
+        # TODO convert the if...else logic to event handlers: e.g. on_ping
         # XXX what about events (JOIN, PART) that we might want to trigger?
 
         if (reply is not None and reply.startswith('PING')):
@@ -155,4 +163,11 @@ class Client:
             self._send('PONG :%s' % msg)
 
         return reply
+
+    #---------------------------------------------------------------------------
+    # this method is blocking and should usually be called on a separate thread
+    # process server messages and generate events as needed until interrupted
+    def communicate(self):
+        while self.next():
+            pass
 
