@@ -1,6 +1,7 @@
 ## a very basic socket-level IRC client
 
 # helpful resources:
+# https://tools.ietf.org/html/rfc1459 - the full IRC spec
 # https://pythonspot.com/building-an-irc-bot/
 # https://stackoverflow.com/questions/2968408/how-do-i-program-a-simple-irc-bot-in-python
 # https://stackoverflow.com/a/822788/197772 - socket line buffering
@@ -9,22 +10,22 @@
 # consider using the client or simple bot implementation
 
 import socket
+import threading
 import logging
-
-# XXX should commands like JOIN and PART wait until the server acks before returning?
-# would need to worry about error codes, such as 451 if we decide to do this...
-
-# XXX we could provide a "daemon" in this package that helps to process the server
-# responses on a separate thread...  that might just overcomplicate things
 
 # XXX should probably protect the receive buffer with a lock in case the caller
 # is running multi-threaded (especially communicate() and quit())
 
 # XXX may want to track connection state to help provide meaningful error messages
 
+# XXX need more error handling for events and daemon execution
+
 ################################################################################
-# the caller must be sure to start listening for server communication soon after
-# making the initial connection using either next() or communicate()
+# a simple event-based IRC client
+#
+# users may wish to handle server messages directly, in which case, they must
+# use next() or communicate() to handle server messages.  this will also cause
+# events to dispatch appropriately and PING's to get answered
 class Client:
 
     sock = None
@@ -33,16 +34,29 @@ class Client:
     name = None
 
     recvbuf = ''
+    daemon = None
+
+    on_welcome = []  # function(msg)
+    on_connect = []  # function()
+    on_quit = []  # function(msg)
+    on_error = []  # function(msg)
+    on_ping = []  # function(txt)
 
     #---------------------------------------------------------------------------
     # Client initialization
     #   nick: the nickname used by this client
     #   name: the full name used by this client
-    def __init__(self, nick, name):
+    #   daemon: start a daemon to manage server messages
+    def __init__(self, nick, name, daemon=True):
         self.logger = logging.getLogger('Plugin.idlerpg.IRC.Client')
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.nick = nick
         self.name = name
+
+        if (daemon):
+            self.daemon = threading.Thread(name='IRC.Client.Daemon',
+                                           target=self.communicate)
+            self.daemon.setDaemon(True)
 
     #---------------------------------------------------------------------------
     # iterate over server responses - this iterator will block until data is read
@@ -90,6 +104,68 @@ class Client:
         return text
 
     #---------------------------------------------------------------------------
+    # generate events from the given server message
+    #   msg: the full text of the server message
+    def _dispatcher(self, msg):
+
+        if (msg is None):
+            raise ValueError('message cannot be None')
+
+        elif (msg.startswith(':')):
+            txt = msg.split(':', 1)[1]
+            self._handle_message(txt)
+
+        elif (msg.startswith('PING')):
+            txt = msg.split(':', 1)[1]
+            self._on_ping(txt)
+
+        elif (msg.startswith('ERROR')):
+            txt = msg.split(':', 1)[1]
+            self._on_error(txt)
+
+        else:
+            self.logger.warn(u'Unknown message -- %s', msg)
+
+    #---------------------------------------------------------------------------
+    # handle general server messages
+    #   msg: the message from the server
+    def _handle_message(self, msg):
+        (origin, name, content) = msg.split(' ', 2)
+
+        if (name == '001'):
+            txt = msg.split(':', 1)[1]
+            self._on_welcome(txt)
+
+    #---------------------------------------------------------------------------
+    # fire on_welcome event
+    #   txt: the welcome message from the server
+    def _on_welcome(self, txt):
+        # notify on_welcome event handlers
+        for handler in self.on_welcome:
+            handler(self, txt)
+
+    #---------------------------------------------------------------------------
+    # handle PING commands
+    #   txt: the server challenge text in the PING
+    def _on_ping(self, txt):
+        self._send('PONG :%s' % txt)
+
+        # notify on_ping event handlers
+        for handler in self.on_ping:
+            handler(self, txt)
+
+    #---------------------------------------------------------------------------
+    # handle ERROR commands from the server - NOTE servers send ERROR on QUIT
+    #   msg: error message supplied by the server
+    def _on_error(self, msg):
+        #XXX should we be logging this?
+        self.logger.warn(msg)
+
+        # notify on_error event handlers
+        for handler in self.on_error:
+            handler(self, msg)
+
+    #---------------------------------------------------------------------------
     # connect this client to the given IRC server
     #   server: the address or hostname of the server
     #   port: the IRC port to connect to (default=6667)
@@ -97,6 +173,12 @@ class Client:
     def connect(self, server, port=6667, passwd=None):
         self.logger.debug(u'connecting to IRC server: %s:%d', server, port)
         self.sock.connect((server, port))
+
+        # notify on_connect event handlers
+        for handler in self.on_connect: handler(self)
+
+        # startup the daemon if configured...
+        if (self.daemon): self.daemon.start()
 
         if (passwd is not None):
             self._send('PASS %s' % passwd)
@@ -140,41 +222,15 @@ class Client:
         else:
             self._send('QUIT :%s' % msg)
 
-        # read all remaining data from server
-        while self.next(): pass
+        # wait for the deamon to exit...
+        if (self.daemon is not None):
+            self.daemon.join()
+
+        # notify on_quit event handlers
+        for handler in self.on_quit: handler(self, msg)
 
         self.sock.close()
         self.logger.debug(u': connection closed')
-
-    #---------------------------------------------------------------------------
-    # this method blocks (handling events) until it sees the welcome message
-    def wait_for_welcome(self):
-        self.logger.debug(u': waiting for welcome message')
-        self.wait_for_reply_code('001')
-
-    #---------------------------------------------------------------------------
-    # this method blocks (handling events) until it sees the end of MOTD
-    def wait_for_motd(self):
-        self.logger.debug(u': waiting for MOTD')
-        self.wait_for_reply_code('376', '422')
-
-    #---------------------------------------------------------------------------
-    # this method blocks (handling events) until it sees one of the given reply codes
-    #   codes: a list of reply codes to consider
-    def wait_for_reply_code(self, *codes):
-        reply = None
-
-        # TODO handle errors & closed connections
-
-        while (not reply in codes):
-            line = self.next()
-
-            if (line is not None and line.startswith(':')):
-                reply = line.split(' ', 2)[1]
-            else:
-                reply = None
-
-        return None
 
     #---------------------------------------------------------------------------
     # this method is blocking and should usually be called on a separate thread
@@ -182,22 +238,8 @@ class Client:
     def next(self):
         message = self._recv()
 
-        if (message is None):
-            return None
-
-        if (message.startswith(':')):
-            self.on_message(message)
-
-        elif (message.startswith('PING')):
-            txt = message.split(':', 1)[1]
-            self.on_ping(txt)
-
-        elif (message.startswith('ERROR')):
-            txt = message.split(':', 1)[1]
-            self.on_error(txt)
-
-        else:
-            self.logger.warn(u'Unknown message -- %s', message)
+        if (message is not None):
+            self._dispatcher(message)
 
         return message
 
@@ -206,29 +248,11 @@ class Client:
     # process server messages and generate events as needed until interrupted
     def communicate(self):
 
-        # XXX does it make more sense for this method to deal with all event
-        # handlers rather than next()?  just need to make sure that any methods
-        # calling next() are okay with that change (especially any methods
-        # expecting PING responses or other events to happen - e.g. wait_for_*)
+        # XXX does it make sense for this method to call the event dispatcher
+        # rather than next()?  we just need to make sure that methods calling
+        # next() are okay with that change (especially any methods expecting
+        # PING responses or other events to happen - e.g. wait_for_*)
 
         while (self.next()):
             pass
-
-    #---------------------------------------------------------------------------
-    # handle server messages - responses that start with :
-    #   msg: the full text of the server message
-    def on_message(self, msg):
-        pass
-
-    #---------------------------------------------------------------------------
-    # handle PING commands
-    #   txt: the server challenge text in the PING
-    def on_ping(self, txt):
-        self._send('PONG :%s' % txt)
-
-    #---------------------------------------------------------------------------
-    # handle ERROR commands from the server - NOTE servers send ERROR on QUIT
-    #   msg: error message supplied by the server
-    def on_error(self, msg):
-        self.logger.warn(msg)
 
