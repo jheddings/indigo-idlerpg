@@ -234,25 +234,16 @@ class Client:
 
     #---------------------------------------------------------------------------
     # this method is blocking and should usually be called on a separate thread
-    # when calling this method, PING will be automatically responded with PONG
-    def next(self):
-        message = self._recv()
-
-        if (message is not None):
-            self._dispatcher(message)
-
-        return message
+    # NOTE events and PING's are not handled by this method
+    def next(self): return self._recv()
 
     #---------------------------------------------------------------------------
     # this method is blocking and should usually be called on a separate thread
     # process server messages and generate events as needed until interrupted
     def communicate(self):
+        for message in self:
+            if (message is None):
+                break
 
-        # XXX does it make sense for this method to call the event dispatcher
-        # rather than next()?  we just need to make sure that methods calling
-        # next() are okay with that change (especially any methods expecting
-        # PING responses or other events to happen - e.g. wait_for_*)
-
-        while (self.next()):
-            pass
+            self._dispatcher(message)
 
