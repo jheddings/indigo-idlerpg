@@ -20,6 +20,8 @@ import logging
 # XXX should probably protect the receive buffer with a lock in case the caller
 # is running multi-threaded (especially communicate() and quit())
 
+# XXX may want to track connection state to help provide meaningful error messages
+
 ################################################################################
 # the caller must be sure to start listening for server communication soon after
 # making the initial connection using either next() or communicate()
@@ -33,6 +35,9 @@ class Client:
     recvbuf = ''
 
     #---------------------------------------------------------------------------
+    # Client initialization
+    #   nick: the nickname used by this client
+    #   name: the full name used by this client
     def __init__(self, nick, name):
         self.logger = logging.getLogger('Plugin.idlerpg.IRC.Client')
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -44,7 +49,8 @@ class Client:
     def __iter__(self): return self
 
     #---------------------------------------------------------------------------
-    # send one line of text
+    # send a message to the connected server followed by a newline
+    #   msg: the message to send to the server
     def _send(self, msg):
         self.logger.debug(u'> %s', msg)
         self.sock.sendall("%s\n" % msg)
@@ -84,14 +90,10 @@ class Client:
         return text
 
     #---------------------------------------------------------------------------
-    def join(self, channel):
-        self._send('JOIN %s' % channel)
-
-    #---------------------------------------------------------------------------
-    def part(self, channel, msg):
-        self._send('PART %s :%s' % (channel, msg))
-
-    #---------------------------------------------------------------------------
+    # connect this client to the given IRC server
+    #   server: the address or hostname of the server
+    #   port: the IRC port to connect to (default=6667)
+    #   passwd: a password if required to access the server (default=None)
     def connect(self, server, port=6667, passwd=None):
         self.logger.debug(u'connecting to IRC server: %s:%d', server, port)
         self.sock.connect((server, port))
@@ -103,14 +105,35 @@ class Client:
         self._send('USER %s - - %s' % (self.nick, self.name))
 
     #---------------------------------------------------------------------------
+    # join this client to the given channel
+    #   channel: the channel to join
+    def join(self, channel):
+        self._send('JOIN %s' % channel)
+
+    #---------------------------------------------------------------------------
+    # leave the given channel with a parting message
+    #   channel: the channel to leave
+    #   msg: a parting message
+    def part(self, channel, msg):
+        self._send('PART %s :%s' % (channel, msg))
+
+    #---------------------------------------------------------------------------
+    # send a private message to the intended recipient
+    #   recip: the user or channel to receive the message
+    #   msg: the text of the message
     def msg(self, recip, msg):
         self._send('PRIVMSG %s :%s' % (recip, msg))
 
     #---------------------------------------------------------------------------
+    # set the mode of the given user or channel
+    #   nick: the user nickname or channel name
+    #   flags: the flags to set on the target
     def mode(self, nick, flags):
         self._send('MODE %s %s' % (nick, flags))
 
     #---------------------------------------------------------------------------
+    # close the connection to the server and process all remaining server messages
+    #   msg: an optional message to provide when quitting (default=None)
     def quit(self, msg=None):
         if (msg is None):
             self._send('QUIT')
@@ -137,6 +160,7 @@ class Client:
 
     #---------------------------------------------------------------------------
     # this method blocks (handling events) until it sees one of the given reply codes
+    #   codes: a list of reply codes to consider
     def wait_for_reply_code(self, *codes):
         reply = None
 
@@ -192,16 +216,19 @@ class Client:
 
     #---------------------------------------------------------------------------
     # handle server messages - responses that start with :
+    #   msg: the full text of the server message
     def on_message(self, msg):
         pass
 
     #---------------------------------------------------------------------------
-    # handle PING commands, txt - the challenge text from the PING
+    # handle PING commands
+    #   txt: the server challenge text in the PING
     def on_ping(self, txt):
         self._send('PONG :%s' % txt)
 
     #---------------------------------------------------------------------------
-    # handle ERROR commands, msg - error message
+    # handle ERROR commands from the server - NOTE servers send ERROR on QUIT
+    #   msg: error message supplied by the server
     def on_error(self, msg):
         self.logger.warn(msg)
 
