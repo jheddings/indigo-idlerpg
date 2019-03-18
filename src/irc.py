@@ -18,7 +18,32 @@ import logging
 
 # XXX may want to track connection state to help provide meaningful error messages
 
+# XXX should we remove the iterator interface entirely?  it may just be confusing...
+
 # XXX need more error handling for events and daemon execution
+
+################################################################################
+# modified from https://stackoverflow.com/a/2022629/197772
+class Event(list):
+
+    #---------------------------------------------------------------------------
+    def __iadd__(self, handler):
+        self.append(handler)
+        return self
+
+    #---------------------------------------------------------------------------
+    def __isub__(self, handler):
+        self.remove(handler)
+        return self
+
+    #---------------------------------------------------------------------------
+    def __call__(self, *args, **kwargs):
+        for handler in self:
+            handler(*args, **kwargs)
+
+    #---------------------------------------------------------------------------
+    def __repr__(self):
+        return "Event(%s)" % list.__repr__(self)
 
 ################################################################################
 # a simple event-based IRC client
@@ -26,21 +51,14 @@ import logging
 # users may wish to handle server messages directly, in which case, they must
 # use next() or communicate() to handle server messages.  this will also cause
 # events to dispatch appropriately and PING's to get answered
+#
+# Events => Handler Function
+#   on_welcome => func(client, msg)
+#   on_connect => func(client)
+#   on_quit => func(client, msg)
+#   on_error => func(client, msg)
+#   on_ping => func(client, txt)
 class Client:
-
-    sock = None
-    logger = None
-    nick = None
-    name = None
-
-    recvbuf = ''
-    daemon = None
-
-    on_welcome = []  # function(msg)
-    on_connect = []  # function()
-    on_quit = []  # function(msg)
-    on_error = []  # function(msg)
-    on_ping = []  # function(txt)
 
     #---------------------------------------------------------------------------
     # Client initialization
@@ -50,13 +68,26 @@ class Client:
     def __init__(self, nick, name, daemon=True):
         self.logger = logging.getLogger('Plugin.idlerpg.IRC.Client')
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.nick = nick
-        self.name = name
+        self.nickname = nick
+        self.fullname = name
+
+        self.recvbuf = ''
 
         if (daemon):
             self.daemon = threading.Thread(name='IRC.Client.Daemon',
                                            target=self.communicate)
             self.daemon.setDaemon(True)
+
+        # initialize event handlers
+        self.on_welcome = Event()
+        self.on_connect = Event()
+        self.on_quit = Event()
+        self.on_error = Event()
+        self.on_ping = Event()
+
+        # self-register for events we care about
+        self.on_ping += self._on_ping
+        self.on_error += self._on_error
 
     #---------------------------------------------------------------------------
     # iterate over server responses - this iterator will block until data is read
@@ -117,11 +148,11 @@ class Client:
 
         elif (msg.startswith('PING')):
             txt = msg.split(':', 1)[1]
-            self._on_ping(txt)
+            self.on_ping(self, txt)
 
         elif (msg.startswith('ERROR')):
             txt = msg.split(':', 1)[1]
-            self._on_error(txt)
+            self.on_error(self, txt)
 
         else:
             self.logger.warn(u'Unknown message -- %s', msg)
@@ -134,36 +165,21 @@ class Client:
 
         if (name == '001'):
             txt = msg.split(':', 1)[1]
-            self._on_welcome(txt)
-
-    #---------------------------------------------------------------------------
-    # fire on_welcome event
-    #   txt: the welcome message from the server
-    def _on_welcome(self, txt):
-        # notify on_welcome event handlers
-        for handler in self.on_welcome:
-            handler(self, txt)
+            self.on_welcome(self, txt)
 
     #---------------------------------------------------------------------------
     # handle PING commands
+    #   client: the client generating the event (should be self)
     #   txt: the server challenge text in the PING
-    def _on_ping(self, txt):
+    def _on_ping(self, client, txt):
         self._send('PONG :%s' % txt)
-
-        # notify on_ping event handlers
-        for handler in self.on_ping:
-            handler(self, txt)
 
     #---------------------------------------------------------------------------
     # handle ERROR commands from the server - NOTE servers send ERROR on QUIT
+    #   client: the client generating the event (should be self)
     #   msg: error message supplied by the server
-    def _on_error(self, msg):
-        #XXX should we be logging this?
+    def _on_error(self, client, msg):
         self.logger.warn(msg)
-
-        # notify on_error event handlers
-        for handler in self.on_error:
-            handler(self, msg)
 
     #---------------------------------------------------------------------------
     # connect this client to the given IRC server
@@ -175,7 +191,7 @@ class Client:
         self.sock.connect((server, port))
 
         # notify on_connect event handlers
-        for handler in self.on_connect: handler(self)
+        self.on_connect(self)
 
         # startup the daemon if configured...
         if (self.daemon): self.daemon.start()
@@ -183,8 +199,8 @@ class Client:
         if (passwd is not None):
             self._send('PASS %s' % passwd)
 
-        self._send('NICK %s' % self.nick)
-        self._send('USER %s - - %s' % (self.nick, self.name))
+        self._send('NICK %s' % self.nickname)
+        self._send('USER %s - - %s' % (self.nickname, self.fullname))
 
     #---------------------------------------------------------------------------
     # join this client to the given channel
@@ -227,23 +243,24 @@ class Client:
             self.daemon.join()
 
         # notify on_quit event handlers
-        for handler in self.on_quit: handler(self, msg)
+        self.on_quit(self, msg)
 
         self.sock.close()
         self.logger.debug(u': connection closed')
 
     #---------------------------------------------------------------------------
     # this method is blocking and should usually be called on a separate thread
-    # NOTE events and PING's are not handled by this method
-    def next(self): return self._recv()
+    # NOTE events and PING's are not handled when calling this method
+    def next(self):
+        return self._recv()
 
     #---------------------------------------------------------------------------
     # this method is blocking and should usually be called on a separate thread
     # process server messages and generate events as needed until interrupted
     def communicate(self):
-        for message in self:
-            if (message is None):
-                break
+        message = self._recv()
 
+        while (message is not None):
             self._dispatcher(message)
+            message = self._recv()
 
