@@ -168,9 +168,12 @@ class Client:
             self.on_join(self, channel)
 
         elif (name == 'PART'):
-            # TODO support parting messages
             channel = content.split(' ', 1)[0]
-            self.on_part(self, channel, None)
+            if (':' in content):
+                txt = content.split(':', 1)[1]
+            else:
+                txt = None
+            self.on_part(self, channel, txt)
 
     #---------------------------------------------------------------------------
     # handle PING commands
