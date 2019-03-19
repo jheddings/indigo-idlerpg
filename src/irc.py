@@ -54,6 +54,7 @@ class Event(list):
 #   on_quit => func(client, msg)
 #   on_error => func(client, msg)
 #   on_ping => func(client, txt)
+#   on_privmsg => func(client, sender, recip, msg)
 #   on_join => func(client, channel)
 #   on_part => func(client, channel, msg)
 class Client:
@@ -82,6 +83,7 @@ class Client:
         self.on_quit = Event()
         self.on_error = Event()
         self.on_ping = Event()
+        self.on_privmsg = Event()
         self.on_join = Event()
         self.on_part = Event()
 
@@ -162,6 +164,11 @@ class Client:
         if (name == '001'):
             txt = parse_user_message(content)
             self.on_welcome(self, txt)
+
+        elif (name == 'PRIVMSG'):
+            recip = parse_first_word(content)
+            txt = parse_user_message(content)
+            self.on_privmsg(self, origin, recip, txt)
 
         elif (name == 'JOIN'):
             channel = parse_user_message(content)
