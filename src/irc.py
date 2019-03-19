@@ -13,9 +13,6 @@ import socket
 import threading
 import logging
 
-# XXX should probably protect the receive buffer with a lock in case the caller
-# is running multi-threaded (especially communicate() and quit())
-
 # XXX may want to track connection state to help provide meaningful error messages
 
 # XXX should we remove the iterator interface entirely?  it may just be confusing...
@@ -48,9 +45,10 @@ class Event(list):
 ################################################################################
 # a simple event-based IRC client
 #
-# users may wish to handle server messages directly, in which case, they must
-# use next() or communicate() to handle server messages.  this will also cause
-# events to dispatch appropriately and PING's to get answered
+# the client will, by default, start a thread when calling connect() to handle
+# server messages and PING responses.  if the caller disables the daemon, it
+# must invoke the communicate() method directly in order to generate events and
+# respond to PING requests.
 #
 # Events => Handler Function
 #   on_welcome => func(client, msg)
@@ -58,6 +56,8 @@ class Event(list):
 #   on_quit => func(client, msg)
 #   on_error => func(client, msg)
 #   on_ping => func(client, txt)
+#   on_join => func(client, channel)
+#   on_part => func(client, channel, msg)
 class Client:
 
     #---------------------------------------------------------------------------
@@ -84,6 +84,8 @@ class Client:
         self.on_quit = Event()
         self.on_error = Event()
         self.on_ping = Event()
+        self.on_join = Event()
+        self.on_part = Event()
 
         # self-register for events we care about
         self.on_ping += self._on_ping
@@ -164,8 +166,17 @@ class Client:
         (origin, name, content) = msg.split(' ', 2)
 
         if (name == '001'):
-            txt = msg.split(':', 1)[1]
+            txt = content.split(':', 1)[1]
             self.on_welcome(self, txt)
+
+        elif (name == 'JOIN'):
+            channel = content.split(':', 1)[1]
+            self.on_join(self, channel)
+
+        elif (name == 'PART'):
+            # TODO support parting messages
+            channel = content.split(' ', 1)[0]
+            self.on_part(self, channel, None)
 
     #---------------------------------------------------------------------------
     # handle PING commands
@@ -190,11 +201,11 @@ class Client:
         self.logger.debug(u'connecting to IRC server: %s:%d', server, port)
         self.sock.connect((server, port))
 
-        # notify on_connect event handlers
-        self.on_connect(self)
-
         # startup the daemon if configured...
         if (self.daemon): self.daemon.start()
+
+        # notify on_connect event handlers
+        self.on_connect(self)
 
         if (passwd is not None):
             self._send('PASS %s' % passwd)
