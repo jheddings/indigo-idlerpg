@@ -137,10 +137,7 @@ class Client:
     #   msg: the full text of the server message
     def _dispatcher(self, msg):
 
-        if (msg is None):
-            raise ValueError('message cannot be None')
-
-        elif (msg.startswith(':')):
+        if (msg.startswith(':')):
             txt = parse_user_message(msg)
             self._handle_message(txt)
 
