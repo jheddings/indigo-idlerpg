@@ -15,8 +15,6 @@ import logging
 
 # XXX may want to track connection state to help provide meaningful error messages
 
-# XXX should we remove the iterator interface entirely?  it may just be confusing...
-
 # XXX need more error handling for events and daemon execution
 
 ################################################################################
@@ -90,10 +88,6 @@ class Client:
         # self-register for events we care about
         self.on_ping += self._on_ping
         self.on_error += self._on_error
-
-    #---------------------------------------------------------------------------
-    # iterate over server responses - this iterator will block until data is read
-    def __iter__(self): return self
 
     #---------------------------------------------------------------------------
     # send a message to the connected server followed by a newline
@@ -258,12 +252,6 @@ class Client:
 
         self.sock.close()
         self.logger.debug(u': connection closed')
-
-    #---------------------------------------------------------------------------
-    # this method is blocking and should usually be called on a separate thread
-    # NOTE events and PING's are not handled when calling this method
-    def next(self):
-        return self._recv()
 
     #---------------------------------------------------------------------------
     # this method is blocking and should usually be called on a separate thread
