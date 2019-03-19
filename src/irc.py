@@ -139,15 +139,15 @@ class Client:
             raise ValueError('message cannot be None')
 
         elif (msg.startswith(':')):
-            txt = msg.split(':', 1)[1]
+            txt = parse_user_message(msg)
             self._handle_message(txt)
 
         elif (msg.startswith('PING')):
-            txt = msg.split(':', 1)[1]
+            txt = parse_user_message(msg)
             self.on_ping(self, txt)
 
         elif (msg.startswith('ERROR')):
-            txt = msg.split(':', 1)[1]
+            txt = parse_user_message(msg)
             self.on_error(self, txt)
 
         else:
@@ -157,20 +157,20 @@ class Client:
     # handle general server messages
     #   msg: the message from the server
     def _handle_message(self, msg):
-        (origin, name, content) = msg.split(' ', 2)
+        (origin, name, content) = parse_server_message(msg)
 
         if (name == '001'):
-            txt = content.split(':', 1)[1]
+            txt = parse_user_message(content)
             self.on_welcome(self, txt)
 
         elif (name == 'JOIN'):
-            channel = content.split(':', 1)[1]
+            channel = parse_user_message(content)
             self.on_join(self, channel)
 
         elif (name == 'PART'):
-            channel = content.split(' ', 1)[0]
+            channel = parse_first_word(content)
             if (':' in content):
-                txt = content.split(':', 1)[1]
+                txt = parse_user_message(content)
             else:
                 txt = None
             self.on_part(self, channel, txt)
@@ -265,4 +265,26 @@ class Client:
         while (message is not None):
             self._dispatcher(message)
             message = self._recv()
+
+################################################################################
+# utility methods for parsing IRC messages
+
+#---------------------------------------------------------------------------
+# parse regular server messages into: origin, name, payload
+def parse_server_message(content):
+    # TODO add error checking
+    return content.split(' ', 2)
+
+#---------------------------------------------------------------------------
+# return the user message portion of the supplied content -- this is all
+# text after the first colon (:) in the data
+def parse_user_message(content):
+    # TODO add error checking
+    return content.split(':', 1)[1]
+
+#---------------------------------------------------------------------------
+# return the first word in the given content, breaking at whitespace
+def parse_first_word(content):
+    # TODO add error checking
+    return content.split(' ', 1)[0]
 
