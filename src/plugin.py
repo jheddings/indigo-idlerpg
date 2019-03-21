@@ -52,7 +52,7 @@ class Plugin(iplug.ThreadedPlugin):
     #---------------------------------------------------------------------------
     def _updatePlayerInfo(self, device):
         address = device.pluginProps['address']
-        player = idlerpg.Player()
+        player = idlerpg.PlayerInfo()
 
         if (player.load_from_url(address)):
             device.updateStateOnServer('online', player.isOnline())

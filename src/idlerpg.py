@@ -8,7 +8,7 @@ import threading
 import xml.etree.ElementTree as ElementTree
 
 ################################################################################
-class Player():
+class PlayerInfo():
 
     #---------------------------------------------------------------------------
     def __init__(self):
