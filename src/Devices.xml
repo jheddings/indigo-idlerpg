@@ -48,4 +48,75 @@
 
     <UiDisplayStateId>status</UiDisplayStateId>
   </Device>
+
+  <Device type="custom" id="idlebot">
+
+    <Name>IdleRPG Bot</Name>
+
+    <ConfigUI>
+      <Field id="irc_server" type="textfield" defaultValue="moo.slashnet.org">
+        <Label>IRC Server:</Label>
+      </Field>
+      <Field id="irc_port" type="textfield" defaultValue="6667">
+        <Label>IRC Port:</Label>
+      </Field>
+      <Field id="irc_passwd" type="textfield" defaultValue="">
+        <Label>IRC Password:</Label>
+      </Field>
+
+      <Field id="irc_nickname" type="textfield" defaultValue="">
+        <Label>IRC Nickname:</Label>
+      </Field>
+      <Field id="irc_fullname" type="textfield" defaultValue="">
+        <Label>IRC Full Name:</Label>
+      </Field>
+
+      <Field id="game_channel" type="textfield" defaultValue="#G7">
+        <Label>Game Channel:</Label>
+      </Field>
+      <Field id="game_bot" type="textfield" defaultValue="bot">
+        <Label>Game Bot:</Label>
+      </Field>
+
+      <Field id="player_name" type="textfield" defaultValue="">
+        <Label>Player Name:</Label>
+      </Field>
+      <Field id="player_passwd" type="textfield" defaultValue="">
+        <Label>Player Password:</Label>
+      </Field>
+      <Field id="player_class" type="textfield" defaultValue="">
+        <Label>Player Class:</Label>
+      </Field>
+
+      <Field id="address" type="textfield" defaultValue="" hidden="yes" />
+    </ConfigUI>
+
+    <States>
+      <State id="level">
+        <ValueType>Integer</ValueType>
+        <TriggerLabel>Level</TriggerLabel>
+        <ControlPageLabel>Level</ControlPageLabel>
+      </State>
+
+      <State id="online">
+        <ValueType>Boolean</ValueType>
+        <TriggerLabel>Online</TriggerLabel>
+        <ControlPageLabel>Online</ControlPageLabel>
+      </State>
+
+      <State id="lastUpdatedAt">
+        <ValueType>String</ValueType>
+        <TriggerLabel>Last Update</TriggerLabel>
+        <ControlPageLabel>Last Update</ControlPageLabel>
+      </State>
+
+      <State id="status">
+        <ValueType>String</ValueType>
+        <TriggerLabel>Status</TriggerLabel>
+        <ControlPageLabel>Status</ControlPageLabel>
+      </State>
+    </States>
+
+    <UiDisplayStateId>status</UiDisplayStateId>
+  </Device>
 </Devices>

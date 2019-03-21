@@ -22,9 +22,23 @@ class Plugin(iplug.ThreadedPlugin):
     def validateDeviceConfigUi(self, values, typeId, devId):
         errors = indigo.Dict()
 
-        # TODO
+        if (typeId == "idlebot"):
+            self._validate_idlebot_config(values, errors)
+        elif (typeId == "info"):
+            self._validate_info_config(values, errors)
+            uname = values['player_name']
+            server = values['irc_server']
+            # TODO set address property for display - uname@server
 
         return ((len(errors) == 0), values, errors)
+
+    #---------------------------------------------------------------------------
+    def deviceStartComm(self, device):
+        iplug.ThreadedPlugin.deviceStartComm(self, device)
+
+    #---------------------------------------------------------------------------
+    def deviceStopComm(self, device):
+        iplug.ThreadedPlugin.deviceStopComm(self, device)
 
     #---------------------------------------------------------------------------
     def runLoopStep(self):
@@ -66,4 +80,24 @@ class Plugin(iplug.ThreadedPlugin):
             else:
                 device.updateStateOnServer('status', 'Offline')
                 device.updateStateImageOnServer(indigo.kStateImageSel.SensorOff)
+
+    #---------------------------------------------------------------------------
+    def _validate_info_config(self, values, errors):
+        iplug.validateConfig_URL('address', values, errors, emptyOk=False)
+
+    #---------------------------------------------------------------------------
+    def _validate_idlebot_config(self, values, errors):
+        iplug.validateConfig_Hostname('irc_server', values, errors, emptyOk=False)
+        iplug.validateConfig_Int('irc_port', values, errors, min=1, max=65536)
+        iplug.validateConfig_String('irc_passwd', values, errors, emptyOk=True)
+
+        iplug.validateConfig_String('irc_nickname', values, errors, emptyOk=False)
+        iplug.validateConfig_String('irc_fullname', values, errors, emptyOk=False)
+
+        iplug.validateConfig_String('game_channel', values, errors, emptyOk=False)
+        iplug.validateConfig_String('game_bot', values, errors, emptyOk=False)
+
+        iplug.validateConfig_String('player_name', values, errors, emptyOk=False)
+        iplug.validateConfig_String('player_passwd', values, errors, emptyOk=False)
+        iplug.validateConfig_String('player_class', values, errors, emptyOk=False)
 
