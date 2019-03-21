@@ -26,9 +26,6 @@ class Plugin(iplug.ThreadedPlugin):
             self._validate_idlebot_config(values, errors)
         elif (typeId == "info"):
             self._validate_info_config(values, errors)
-            uname = values['player_name']
-            server = values['irc_server']
-            # TODO set address property for display - uname@server
 
         return ((len(errors) == 0), values, errors)
 
@@ -42,14 +39,14 @@ class Plugin(iplug.ThreadedPlugin):
 
     #---------------------------------------------------------------------------
     def runLoopStep(self):
-        self.refreshAllDevices()
+        self.refresh_all_devices()
 
     #---------------------------------------------------------------------------
-    def refreshAllDevices(self):
-        self.refreshPlayerStatus()
+    def refresh_all_devices(self):
+        self.refresh_player_status()
 
     #---------------------------------------------------------------------------
-    def refreshPlayerStatus(self):
+    def refresh_player_status(self):
         for device in indigo.devices.itervalues('self'):
             if (device.enabled and device.configured):
                 self._update(device)
@@ -61,20 +58,20 @@ class Plugin(iplug.ThreadedPlugin):
         typeId = device.deviceTypeId
 
         if typeId == 'info':
-            self._updatePlayerInfo(device)
+            self._update_player_info(device)
 
     #---------------------------------------------------------------------------
-    def _updatePlayerInfo(self, device):
+    def _update_player_info(self, device):
         address = device.pluginProps['address']
         player = idlerpg.PlayerInfo()
 
         if (player.load_from_url(address)):
-            device.updateStateOnServer('online', player.isOnline())
+            device.updateStateOnServer('online', player.is_online())
             device.updateStateOnServer('level', player.level)
             device.updateStateOnServer('username', player.username)
             device.updateStateOnServer('lastUpdatedAt', time.strftime('%c'))
 
-            if (player.isOnline()):
+            if (player.is_online()):
                 device.updateStateOnServer('status', 'Online')
                 device.updateStateImageOnServer(indigo.kStateImageSel.SensorOn)
             else:
@@ -100,4 +97,8 @@ class Plugin(iplug.ThreadedPlugin):
         iplug.validateConfig_String('player_name', values, errors, emptyOk=False)
         iplug.validateConfig_String('player_passwd', values, errors, emptyOk=False)
         iplug.validateConfig_String('player_class', values, errors, emptyOk=False)
+
+        # TODO set address property for display - uname@server
+        uname = values['player_name']
+        server = values['irc_server']
 

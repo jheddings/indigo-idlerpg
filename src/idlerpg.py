@@ -8,15 +8,27 @@ import threading
 import xml.etree.ElementTree as ElementTree
 
 ################################################################################
+class IdleBot():
+
+    #---------------------------------------------------------------------------
+    def __init__(self):
+        self.logger = logging.getLogger('Plugin.idlerpg.IdleBot')
+
+        self.online = None
+
+    #---------------------------------------------------------------------------
+    def is_online(self): return (self.online == 1)
+
+################################################################################
 class PlayerInfo():
 
     #---------------------------------------------------------------------------
     def __init__(self):
         self.logger = logging.getLogger('Plugin.idlerpg.Player')
-        self.lock = threading.Lock()
 
         self.username = None
         self.online = None
+        self.ttl = None
         self.level = None
 
     #---------------------------------------------------------------------------
@@ -123,7 +135,7 @@ class PlayerInfo():
         return obj
 
     #---------------------------------------------------------------------------
-    def isOnline(self): return (self.online == 1)
+    def is_online(self): return (self.online == 1)
 
     #---------------------------------------------------------------------------
     def _read_file(self, path):

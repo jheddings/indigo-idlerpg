@@ -2,6 +2,6 @@
 <MenuItems>
   <MenuItem id="refreshAllDevices">
     <Name>Refresh Status</Name>
-    <CallbackMethod>refreshAllDevices</CallbackMethod>
+    <CallbackMethod>refresh_all_devices</CallbackMethod>
   </MenuItem>
 </MenuItems>
