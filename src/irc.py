@@ -118,7 +118,7 @@ class Client:
             # receive a block of data at a time
             more = self.sock.recv(4096)
             if (more is not None and len(more) > 0):
-                self.recvbuf += more
+                self.recvbuf += more.decode()
 
         # if there is a newline in the buffer, we can process the next line
         if ("\n" in self.recvbuf):
