@@ -24,9 +24,9 @@ class Plugin(iplug.ThreadedPlugin):
     def validateDeviceConfigUi(self, values, typeId, devId):
         errors = indigo.Dict()
 
-        if (typeId == "idlebot"):
+        if typeId == "idlebot":
             self._validate_idlebot_config(values, errors)
-        elif (typeId == "info"):
+        elif typeId == "info":
             self._validate_info_config(values, errors)
 
         return ((len(errors) == 0), values, errors)
@@ -34,19 +34,23 @@ class Plugin(iplug.ThreadedPlugin):
     #---------------------------------------------------------------------------
     def deviceStartComm(self, device):
         iplug.ThreadedPlugin.deviceStartComm(self, device)
+        typeId = device.deviceTypeId
 
         # start bots and track them...
-        if (typeId == "idlebot"):
-            bot = idlerpg.IdleBot()
+        if typeId == "idlebot":
+            bot = idlerpg.IdleBot(device)
+            bot.start()
             self.bots[device.id] = bot
 
     #---------------------------------------------------------------------------
     def deviceStopComm(self, device):
         iplug.ThreadedPlugin.deviceStopComm(self, device)
+        typeId = device.deviceTypeId
 
         # stop bots as we close...
-        if (typeId == "idlebot"):
+        if typeId == "idlebot":
             bot = self.bots[device.id]
+            bot.stop()
 
     #---------------------------------------------------------------------------
     def runLoopStep(self):
@@ -59,7 +63,7 @@ class Plugin(iplug.ThreadedPlugin):
     #---------------------------------------------------------------------------
     def refresh_player_status(self):
         for device in indigo.devices.itervalues('self'):
-            if (device.enabled and device.configured):
+            if device.enabled and device.configured:
                 self._update_player_status(device)
 
     #---------------------------------------------------------------------------
@@ -78,13 +82,13 @@ class Plugin(iplug.ThreadedPlugin):
         address = device.pluginProps['address']
         player = idlerpg.PlayerInfo()
 
-        if (player.load_from_url(address)):
+        if player.load_from_url(address):
             device.updateStateOnServer('online', player.is_online())
             device.updateStateOnServer('level', player.level)
             device.updateStateOnServer('username', player.username)
             device.updateStateOnServer('lastUpdatedAt', time.strftime('%c'))
 
-            if (player.is_online()):
+            if player.is_online():
                 device.updateStateOnServer('status', 'Online')
                 device.updateStateImageOnServer(indigo.kStateImageSel.SensorOn)
             else:
@@ -93,7 +97,11 @@ class Plugin(iplug.ThreadedPlugin):
 
     #---------------------------------------------------------------------------
     def _update_bot_status(self, device):
-        pass
+        bot = self.bots[device.id]
+
+        if bot.update():
+            device.updateStateOnServer('level', bot.level)
+            device.updateStateOnServer('lastUpdatedAt', time.strftime('%c'))
 
     #---------------------------------------------------------------------------
     def _validate_info_config(self, values, errors):

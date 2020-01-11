@@ -166,31 +166,67 @@ class PlayerInfo():
 class IdleBot():
 
     #---------------------------------------------------------------------------
-    def __init__(self, client):
+    def __init__(self, device):
         self.logger = logging.getLogger('Plugin.idlerpg.IdleBot')
 
+        self.irc_server = device.pluginProps['irc_server']
+        self.irc_port = int(device.pluginProps['irc_port'])
+        #self.irc_passwd = device.pluginProps['irc_passwd']
+
+        self.irc_nickname = device.pluginProps['irc_nickname']
+        self.irc_fullname = device.pluginProps['irc_fullname']
+
+        self.rpg_channel = device.pluginProps['game_channel']
+        self.rpg_bot = device.pluginProps['game_bot']
+
+        self.rpg_username = device.pluginProps['player_name']
+        self.rpg_password = device.pluginProps['player_passwd']
+        self.rpg_class = device.pluginProps['player_class']
+
         self.online = False
+        self.next = None
         self.level = None
 
-        self.username = None
-        self.password = None
-        self.faction = None
-
-        self.client = client
+        self.client = irc.Client(self.irc_nickname, self.irc_fullname)
+        self.client.on_welcome += self.on_welcome
+        self.client.on_privmsg += self.on_privmsg
 
     #---------------------------------------------------------------------------
-    def start():
-        pass
+    def on_welcome(self, client, txt):
+        self.logger.debug('welcome received... joining IdleRPG')
 
-        # XXX something like client.connect here...
+        client.join(self.rpg_channel)
+
+        # TODO register if needed - maybe put a button on the device settings?
+        #client.msg('bot', 'REGISTER {0} {1} {2}'.format(username, password, faction))
+
+        login_msg = 'LOGIN ' + self.rpg_username + ' ' + self.rpg_password
+        client.msg(self.rpg_bot, login_msg)
 
     #---------------------------------------------------------------------------
-    def stop():
-        pass
+    def on_privmsg(self, client, origin, recip, txt):
+        self.logger.debug('privmsg - %s:%s => %s', origin, recip, txt)
 
     #---------------------------------------------------------------------------
-    def update():
-        pass
+    def start(self):
+        self.client.connect(self.irc_server, port=self.irc_port)
 
-        # XXX ask the bot "whoami" here and parse the results
+    #---------------------------------------------------------------------------
+    def stop(self):
+        if self.client.connected is True:
+            # parting causes quite a penalty...
+            self.client.part(self.rpg_channel, 'goodbye')
+
+            # close everything up
+            self.client.quit()
+
+    #---------------------------------------------------------------------------
+    def update(self):
+        if self.client.connected is not True:
+            return False
+
+        # this will cause the server to respond for parsing in on_privmsg
+        self.client.msg('bot', 'WHOAMI')
+
+        return True
 
