@@ -38,7 +38,7 @@ class Plugin(iplug.ThreadedPlugin):
 
         # start bots and track them...
         if typeId == "idlebot":
-            bot = idlerpg.IdleBot(device)
+            bot = idlerpg.IdleBot(device.pluginProps)
             bot.start()
             self.bots[device.id] = bot
 

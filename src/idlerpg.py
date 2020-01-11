@@ -2,11 +2,8 @@
 # http://idlerpg.net/source.php
 
 import logging
-import urllib2
 
 import irc
-
-import xml.etree.ElementTree as ElementTree
 
 ################################################################################
 class PlayerInfo():
@@ -42,6 +39,8 @@ class PlayerInfo():
 
     #---------------------------------------------------------------------------
     def load_from_string(self, xml):
+        import xml.etree.ElementTree as ElementTree
+
         if (xml is None):
             self.logger.warn(u'data is empty')
             return None
@@ -142,6 +141,8 @@ class PlayerInfo():
 
     #---------------------------------------------------------------------------
     def _get_url(self, url):
+        import urllib2
+
         if (url is None): return None
         self.logger.debug(u'downloading data: %s', url)
 
@@ -166,22 +167,22 @@ class PlayerInfo():
 class IdleBot():
 
     #---------------------------------------------------------------------------
-    def __init__(self, device):
+    def __init__(self, conf):
         self.logger = logging.getLogger('Plugin.idlerpg.IdleBot')
 
-        self.irc_server = device.pluginProps['irc_server']
-        self.irc_port = int(device.pluginProps['irc_port'])
-        #self.irc_passwd = device.pluginProps['irc_passwd']
+        self.irc_server = conf['irc_server']
+        self.irc_port = int(conf['irc_port'])
+        #self.irc_passwd = conf['irc_passwd']
 
-        self.irc_nickname = device.pluginProps['irc_nickname']
-        self.irc_fullname = device.pluginProps['irc_fullname']
+        self.irc_nickname = conf['irc_nickname']
+        self.irc_fullname = conf['irc_fullname']
 
-        self.rpg_channel = device.pluginProps['game_channel']
-        self.rpg_bot = device.pluginProps['game_bot']
+        self.rpg_channel = conf['game_channel']
+        self.rpg_bot = conf['game_bot']
 
-        self.rpg_username = device.pluginProps['player_name']
-        self.rpg_password = device.pluginProps['player_passwd']
-        self.rpg_class = device.pluginProps['player_class']
+        self.rpg_username = conf['player_name']
+        self.rpg_password = conf['player_passwd']
+        self.rpg_class = conf['player_class']
 
         self.online = False
         self.next = None
