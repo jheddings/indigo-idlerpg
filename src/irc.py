@@ -98,7 +98,8 @@ class Client:
     #   msg: the message to send to the server
     def _send(self, msg):
         self.logger.debug(u'> %s', msg)
-        self.sock.sendall("%s\n" % msg)
+        self.sock.sendall(msg.encode())
+        self.sock.sendall("\n".encode())
 
     #---------------------------------------------------------------------------
     # receive one line of text
