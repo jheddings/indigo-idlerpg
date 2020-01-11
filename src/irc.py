@@ -121,7 +121,7 @@ class Client:
             # receive a block of data at a time
             more = self.sock.recv(4096)
             if (more is None or len(more) == 0):
-                self.logger.warn(u': no data from socket')
+                self.logger.warn(u': no data in socket')
                 self.connected = False
             else:
                 self.recvbuf += more.decode()

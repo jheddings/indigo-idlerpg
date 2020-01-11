@@ -99,9 +99,26 @@ class Plugin(iplug.ThreadedPlugin):
     def _update_bot_status(self, device):
         bot = self.bots[device.id]
 
-        if bot.update():
+        # this method does not update the player status immediately...  instead,
+        # it sends a request for status to the game engine.  this means that the
+        # plugin status will be behind by at least one call to this method
+        bot.request_status()
+
+        device.updateStateOnServer('online', bot.online)
+
+        if bot.online:
             device.updateStateOnServer('level', bot.level)
-            device.updateStateOnServer('lastUpdatedAt', time.strftime('%c'))
+            device.updateStateOnServer('nextLevel', str(bot.next))
+            device.updateStateOnServer('status', 'Online')
+            device.updateStateImageOnServer(indigo.kStateImageSel.SensorOn)
+        else:
+            device.updateStateOnServer('status', 'Offline')
+            device.updateStateImageOnServer(indigo.kStateImageSel.SensorOff)
+
+        address = '%s@%s'.format(bot.rpg_username, bot.irc_server)
+        device.updateStateOnServer('address', address)
+
+        device.updateStateOnServer('lastUpdatedAt', time.strftime('%c'))
 
     #---------------------------------------------------------------------------
     def _validate_info_config(self, values, errors):

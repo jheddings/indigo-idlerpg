@@ -104,6 +104,12 @@
         <ControlPageLabel>Online</ControlPageLabel>
       </State>
 
+      <State id="nextLevel">
+        <ValueType>String</ValueType>
+        <TriggerLabel>Next Level</TriggerLabel>
+        <ControlPageLabel>Next Level</ControlPageLabel>
+      </State>
+
       <State id="lastUpdatedAt">
         <ValueType>String</ValueType>
         <TriggerLabel>Last Update</TriggerLabel>

@@ -230,7 +230,7 @@ class IdleBot():
         self.online = False
 
     #---------------------------------------------------------------------------
-    def update(self):
+    def request_status(self):
         if self.client.connected is not True:
             self.online = False
 
