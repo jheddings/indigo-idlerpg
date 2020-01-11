@@ -3,7 +3,8 @@
 
 import logging
 import urllib2
-import threading
+
+import irc
 
 import xml.etree.ElementTree as ElementTree
 
@@ -24,7 +25,7 @@ class PlayerInfo():
 
     #---------------------------------------------------------------------------
     def __init__(self):
-        self.logger = logging.getLogger('Plugin.idlerpg.Player')
+        self.logger = logging.getLogger('Plugin.idlerpg.PlayerInfo')
 
         self.username = None
         self.online = None
@@ -172,4 +173,36 @@ class PlayerInfo():
             self.logger.warn(u'URL Error: %s', err.reason)
 
         return data
+
+################################################################################
+class IdleBot():
+
+    #---------------------------------------------------------------------------
+    def __init__(self, client):
+        self.logger = logging.getLogger('Plugin.idlerpg.IdleBot')
+
+        self.online = False
+        self.level = None
+
+        self.username = None
+        self.password = None
+        self.faction = None
+
+        self.client = client
+
+    #---------------------------------------------------------------------------
+    def start():
+        pass
+
+        # XXX something like client.connect here...
+
+    #---------------------------------------------------------------------------
+    def stop():
+        pass
+
+    #---------------------------------------------------------------------------
+    def update():
+        pass
+
+        # XXX ask the bot "whoami" here and parse the results
 

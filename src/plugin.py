@@ -10,6 +10,8 @@ import idlerpg
 ################################################################################
 class Plugin(iplug.ThreadedPlugin):
 
+    bots = dict()
+
     #---------------------------------------------------------------------------
     def validatePrefsConfigUi(self, values):
         errors = indigo.Dict()
@@ -33,9 +35,18 @@ class Plugin(iplug.ThreadedPlugin):
     def deviceStartComm(self, device):
         iplug.ThreadedPlugin.deviceStartComm(self, device)
 
+        # start bots and track them...
+        if (typeId == "idlebot"):
+            bot = idlerpg.IdleBot()
+            self.bots[device.id] = bot
+
     #---------------------------------------------------------------------------
     def deviceStopComm(self, device):
         iplug.ThreadedPlugin.deviceStopComm(self, device)
+
+        # stop bots as we close...
+        if (typeId == "idlebot"):
+            bot = self.bots[device.id]
 
     #---------------------------------------------------------------------------
     def runLoopStep(self):
@@ -49,16 +60,18 @@ class Plugin(iplug.ThreadedPlugin):
     def refresh_player_status(self):
         for device in indigo.devices.itervalues('self'):
             if (device.enabled and device.configured):
-                self._update(device)
+                self._update_player_status(device)
 
     #---------------------------------------------------------------------------
-    def _update(self, device):
+    def _update_player_status(self, device):
         self.logger.debug(u'Updating: %s', device.name)
 
         typeId = device.deviceTypeId
 
         if typeId == 'info':
             self._update_player_info(device)
+        elif typeId == 'idlebot':
+            self._update_bot_status(device)
 
     #---------------------------------------------------------------------------
     def _update_player_info(self, device):
@@ -77,6 +90,10 @@ class Plugin(iplug.ThreadedPlugin):
             else:
                 device.updateStateOnServer('status', 'Offline')
                 device.updateStateImageOnServer(indigo.kStateImageSel.SensorOff)
+
+    #---------------------------------------------------------------------------
+    def _update_bot_status(self, device):
+        pass
 
     #---------------------------------------------------------------------------
     def _validate_info_config(self, values, errors):
