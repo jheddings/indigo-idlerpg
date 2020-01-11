@@ -1,7 +1,9 @@
 ## wrapper for reading idlerpg data
 # http://idlerpg.net/source.php
 
+import re
 import logging
+import datetime
 
 import irc
 
@@ -97,6 +99,9 @@ class PlayerInfo():
         return True
 
     #---------------------------------------------------------------------------
+    def is_online(self): return (self.online == 1)
+
+    #---------------------------------------------------------------------------
     def _parse_value(self, val):
         if (val is None):
             return None
@@ -121,9 +126,6 @@ class PlayerInfo():
             obj[node.tag] = self._parse_value(node.text)
 
         return obj
-
-    #---------------------------------------------------------------------------
-    def is_online(self): return (self.online == 1)
 
     #---------------------------------------------------------------------------
     def _read_file(self, path):
@@ -206,7 +208,11 @@ class IdleBot():
 
     #---------------------------------------------------------------------------
     def on_privmsg(self, client, origin, recip, txt):
-        self.logger.debug('privmsg - %s:%s => %s', origin, recip, txt)
+        if self._parse_online_msg(txt):
+            self.logger.debug('status - Online [%d] => %s', self.level, self.next)
+
+        elif self._parse_offline_msg(txt):
+            self.logger.debug('status - Offline')
 
     #---------------------------------------------------------------------------
     def start(self):
@@ -221,13 +227,40 @@ class IdleBot():
             # close everything up
             self.client.quit()
 
+        self.online = False
+
     #---------------------------------------------------------------------------
     def update(self):
         if self.client.connected is not True:
-            return False
+            self.online = False
 
         # this will cause the server to respond for parsing in on_privmsg
         self.client.msg('bot', 'WHOAMI')
+
+    #---------------------------------------------------------------------------
+    def _parse_online_msg(self, msg):
+        m = re.match('You are (.*), the level ([0-9]+) (.+)\..* ([0-9]+) days, ([0-9]+):([0-9]+):([0-9]+)$', msg)
+
+        if m is None: return False
+
+        self.online = (m.group(1) == self.rpg_username)
+        self.level = int(m.group(2))
+
+        days = int(m.group(4))
+        hours = int(m.group(5))
+        minutes = int(m.group(6))
+        seconds = int(m.group(7))
+
+        self.next = datetime.timedelta(days, seconds, 0, 0, minutes, hours)
+
+        return True
+
+    #---------------------------------------------------------------------------
+    def _parse_offline_msg(self, msg):
+        if not msg.startswith('You are not logged in'):
+            return False
+
+        self.online = False
 
         return True
 
