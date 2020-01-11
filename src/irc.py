@@ -72,11 +72,14 @@ class Client:
         self.fullname = name
 
         self.recvbuf = ''
+        self.connected = False
 
-        if (daemon):
+        if (daemon is True):
             self.daemon = threading.Thread(name='IRC.Client.Daemon',
                                            target=self.communicate)
             self.daemon.setDaemon(True)
+        else:
+            self.daemon = None
 
         # initialize event handlers
         self.on_welcome = Event()
@@ -117,7 +120,10 @@ class Client:
 
             # receive a block of data at a time
             more = self.sock.recv(4096)
-            if (more is not None and len(more) > 0):
+            if (more is None or len(more) == 0):
+                self.logger.warn(u': no data from socket')
+                self.connected = False
+            else:
                 self.recvbuf += more.decode()
 
         # if there is a newline in the buffer, we can process the next line
@@ -209,6 +215,8 @@ class Client:
     def connect(self, server, port=6667, passwd=None):
         self.logger.debug(u'connecting to IRC server: %s:%d', server, port)
         self.sock.connect((server, port))
+
+        self.connected = True
 
         # startup the daemon if configured...
         if (self.daemon): self.daemon.start()
