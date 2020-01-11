@@ -50,7 +50,7 @@ class IdleRPGPlayerTest(unittest.TestCase):
         player = idlerpg.PlayerInfo()
 
         self.assertTrue(player.load_from_file('test/jarvis_31_online.xml'))
-        self.assertTrue(player.isOnline())
+        self.assertTrue(player.is_online())
         self.assertEqual(player.level, 31)
         self.assertGreater(player.ttl, 0)
 
@@ -59,7 +59,7 @@ class IdleRPGPlayerTest(unittest.TestCase):
         player = idlerpg.PlayerInfo()
 
         self.assertTrue(player.load_from_file('test/jarvis_31_offline.xml'))
-        self.assertFalse(player.isOnline())
+        self.assertFalse(player.is_online())
         self.assertEqual(player.level, 31)
         self.assertGreater(player.ttl, 0)
 
