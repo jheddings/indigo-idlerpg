@@ -48,9 +48,11 @@ class Plugin(iplug.ThreadedPlugin):
         typeId = device.deviceTypeId
 
         # stop bots as we close...
-        if typeId == "idlebot":
+        if typeId == "idlebot" and device.id in self.bots:
             bot = self.bots[device.id]
             bot.stop()
+
+            del self.bots[device.id]
 
     #---------------------------------------------------------------------------
     def runLoopStep(self):
