@@ -113,11 +113,17 @@ class Plugin(iplug.ThreadedPlugin):
         # find the indigo device being updated
         device_id = self.bots.index(bot)
 
+        self.logger.debug(u'bot status report: %s => ', bot.rpg_username, device_id)
+
         if device_id is None:
             self.logger.warn(u'Bot not found: %s', bot.rpg_username)
             return
 
         device = indigo.devices[device_id]
+        if device is None:
+            self.logger.error(u'Unknown error: device not found -- %s', device_id)
+            return
+
         device.updateStateOnServer('online', bot.online)
 
         if bot.online:
