@@ -1,54 +1,6 @@
 <?xml version="1.0"?>
 <Devices>
 
-  <Device type="custom" id="info">
-
-    <Name>Player Info</Name>
-
-    <ConfigUI>
-      <Field id="address" type="textfield" defaultValue="">
-        <Label>URL:</Label>
-      </Field>
-      <Field id="addressHelp" type="label" fontSize="mini" alignWithControl="true">
-        <Label>The player info URL (in XML format) from your IdleRPG server.</Label>
-      </Field>
-    </ConfigUI>
-
-    <States>
-      <State id="username">
-        <ValueType>String</ValueType>
-        <TriggerLabel>Username</TriggerLabel>
-        <ControlPageLabel>Username</ControlPageLabel>
-      </State>
-
-      <State id="level">
-        <ValueType>Integer</ValueType>
-        <TriggerLabel>Level</TriggerLabel>
-        <ControlPageLabel>Level</ControlPageLabel>
-      </State>
-
-      <State id="online">
-        <ValueType>Boolean</ValueType>
-        <TriggerLabel>Online</TriggerLabel>
-        <ControlPageLabel>Online</ControlPageLabel>
-      </State>
-
-      <State id="lastUpdatedAt">
-        <ValueType>String</ValueType>
-        <TriggerLabel>Last Update</TriggerLabel>
-        <ControlPageLabel>Last Update</ControlPageLabel>
-      </State>
-
-      <State id="status">
-        <ValueType>String</ValueType>
-        <TriggerLabel>Status</TriggerLabel>
-        <ControlPageLabel>Status</ControlPageLabel>
-      </State>
-    </States>
-
-    <UiDisplayStateId>status</UiDisplayStateId>
-  </Device>
-
   <Device type="custom" id="idlebot">
 
     <Name>IdleRPG Bot</Name>
@@ -87,8 +39,6 @@
       <Field id="player_class" type="textfield" defaultValue="">
         <Label>Player Class:</Label>
       </Field>
-
-      <Field id="address" type="textfield" defaultValue="" hidden="yes" />
     </ConfigUI>
 
     <States>

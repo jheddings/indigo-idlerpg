@@ -39,8 +39,10 @@ class Plugin(iplug.ThreadedPlugin):
         # start bots and track them...
         if typeId == "idlebot":
             bot = idlerpg.IdleBot(device.pluginProps)
-            bot.start()
+            bot.on_status_update += self._on_bot_status_update
+
             self.bots[device.id] = bot
+            bot.start()
 
     #---------------------------------------------------------------------------
     def deviceStopComm(self, device):
@@ -103,22 +105,29 @@ class Plugin(iplug.ThreadedPlugin):
 
         # this method does not update the player status immediately...  instead,
         # it sends a request for status to the game engine.  this means that the
-        # plugin status will be behind by at least one call to this method
+        # status will be picked up asynchronously by the on_status_update handler
         bot.request_status()
 
+    #---------------------------------------------------------------------------
+    def _on_bot_status_update(self, bot):
+        # find the indigo device being updated
+        device_id = self.bots.index(bot)
+
+        if device_id is None:
+            self.logger.warn(u'Bot not found: %s', bot.rpg_username)
+            return
+
+        device = indigo.devices[device_id]
         device.updateStateOnServer('online', bot.online)
 
         if bot.online:
             device.updateStateOnServer('level', bot.level)
-            device.updateStateOnServer('nextLevel', str(bot.next))
+            device.updateStateOnServer('nextLevel', str(bot.next_level))
             device.updateStateOnServer('status', 'Online')
             device.updateStateImageOnServer(indigo.kStateImageSel.SensorOn)
         else:
             device.updateStateOnServer('status', 'Offline')
             device.updateStateImageOnServer(indigo.kStateImageSel.SensorOff)
-
-        address = '%s@%s'.format(bot.rpg_username, bot.irc_server)
-        device.updateStateOnServer('address', address)
 
         device.updateStateOnServer('lastUpdatedAt', time.strftime('%c'))
 
